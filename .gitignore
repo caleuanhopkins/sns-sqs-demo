@@ -1,0 +1,3 @@
+/localstack/db-data
+/localstack/volume
+/**/__pycache__

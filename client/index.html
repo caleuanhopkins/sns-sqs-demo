@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Notifications</title>
+</head>
+<body>
+    <h1>Write Notification</h1>
+        <form id="client1-message"  onsubmit="postData(event)">
+            <label for="name">Your Name</label><br/>
+            <input type="text" id="name" name="name" /><br/><br/>
+            <label for="message">Message:</label><br/>
+            <textarea id="message" name="message"></textarea>
+            <br/><br/>
+            <button type="submit">Send</button>
+        </form>
+    <hr/>
+    <h1>Messages</h1>
+    <ul id="notifications"></ul>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8001/ws');
+
+        ws.onopen = function(event) {
+            console.log('Connected to WebSocket server.');
+        };
+
+        ws.onmessage = function(event) {
+            embedMessage(event)
+        };
+
+        ws.onclose = function(event) {
+            console.log('Disconnected from WebSocket server.');
+        };
+
+        function embedMessage(single_message) {
+            const notificationList = document.getElementById('notifications');
+            const message = JSON.parse(single_message.data)
+            notificationList.innerHTML += "<li><strong><i>"+message.client+"</i> says:<strong> "+message.message+"</li><br/>"
+        }
+
+        function postData(event) {
+             event.preventDefault();
+
+            const textarea = document.getElementById("message");
+            const name = document.getElementById("name");
+
+            console.log(name.value)
+            console.log(textarea.value)
+
+            const endpoint = "http://localhost:8000/publish/";
+            const data = { topic:"messages_topic","subject":name.value+" sent a message", message: JSON.stringify({"client":name.value,  "message": textarea.value})};
+
+            // Use the fetch API to send a POST request
+            fetch(endpoint, {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Success:", data);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+            }
+
+        function getMessages() {
+            console.log('triggered')
+            const endpoint = "http://localhost:8000/messages";
+
+            fetch(endpoint)
+                .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+                })
+                .then(data => {
+                    displayMessages(data);
+                })
+                .catch(error => {
+                    console.error("Error fetching messages:", error);
+                });
+        }
+
+        function displayMessages(messages) {
+            messages.forEach((message, index) => {
+                embedMessage({data: JSON.stringify(message)})
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", getMessages);
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+boto3
+websockets
+mysql-connector-python
+pydantic
